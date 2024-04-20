@@ -161,7 +161,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         val type = if (url.contains("tvshows")) TvType.TvSeries else TvType.Movie
         //Log.d("desc", description.toString())
         val trailerRegex = Regex("\"http.*\"")
-        var trailer = if (type == TvType.Movie)
+        var trailer = if (type == TvType.Movie) {
             fixUrlNull(
                 getEmbed(
                     doc.select("#report-video-button-field > input[name~=postid]").attr("value")
@@ -170,7 +170,9 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                     url
                 ).parsed<TrailerUrl>().embedUrl
             )
-        else fixUrlNull(doc.select("iframe.rptss").attr("src").toString())
+        } else {
+            fixUrlNull(doc.select("iframe.rptss").attr("src").toString())
+        }
         trailer = trailerRegex.find(trailer.toString())?.value.toString()
         //Log.d("trailer", trailer.toString())
         val rating = doc.select("span.dt_rating_vgs").text().toRatingInt()
@@ -200,8 +202,8 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                     Episode(
                         data = it.select("div.episodiotitle > a").attr("href"),
                         name = it.select("div.episodiotitle > a").text(),
-                        season = seasonNum+1,
-                        episode = epNum+1,
+                        season = seasonNum + 1,
+                        episode = epNum + 1,
                         posterUrl = it.select("div.imagen > img").attr("src")
                     )
                 )
@@ -209,7 +211,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         }
 
         return if (type == TvType.Movie) {
-            newMovieLoadResponse(title, url, TvType.Movie, url+","+doc.select("#player-option-1").attr("data-post").toString()) {
+            newMovieLoadResponse(title, url, TvType.Movie, url + "," + doc.select("#player-option-1").attr("data-post").toString()) {
                 this.posterUrl = poster?.trim()
                 this.backgroundPosterUrl = bgposter?.trim()
                 this.year = year
@@ -257,8 +259,34 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                 referer
             ).parsed<EmbedUrl>().embedUrl
         ).toString()
-        url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
-        loadStreamWish(url, callback)
+
+        // Embed video streaming links from https://anym3u8player.com and https://animezia.cloud
+        val videoStreamingLinks = listOf(
+            "https://anym3u8player.com",
+            "https://animezia.cloud"
+        )
+
+        for (videoLink in videoStreamingLinks) {
+            val videoUrl = "$videoLink/$url"
+            callback.invoke(
+                ExtractorLink(
+                    name,
+                    name,
+                    videoUrl,
+                    videoUrl,
+                    Qualities.Unknown.value,
+                    true,
+                    mapOf(
+                        "Accept" to "*/*",
+                        "Connection" to "keep-alive",
+                        "Sec-Fetch-Dest" to "empty",
+                        "Sec-Fetch-Mode" to "cors",
+                        "Sec-Fetch-Site" to "cross-site",
+                        "Origin" to "${splitUrl(url)}",
+                    )
+                )
+            )
+        }
 
         return true
     }
@@ -269,11 +297,10 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         return Pair(match?.groups?.get(2)?.value.toString(), match?.groups?.get(3)?.value.toString())
     }
 
-    private suspend fun loadStreamWish(
+    private suspend fun loadMultiMovies(
         url: String,
         callback: (ExtractorLink) -> Unit
     ) {
-
         val doc = app.get(url).text
         val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
         val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
