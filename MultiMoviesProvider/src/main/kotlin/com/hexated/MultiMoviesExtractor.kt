@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.utils.Qualities
 
 open class MultiMoviesExtractor : ExtractorApi() {
     override var name = "MultiMovies"
-    override var mainUrl = "https://animezia.cloud"
+    override var mainUrl = "https://multimovies.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(url: String, referer: String?): List<ExtractorLink>? {
