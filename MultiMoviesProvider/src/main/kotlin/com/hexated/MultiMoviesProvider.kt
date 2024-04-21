@@ -258,7 +258,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
             ).parsed<EmbedUrl>().embedUrl
         ).toString()
         url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
-        loadMultiMovies(url, callback)
+        loadStreamWish(url, callback)
 
         return true
     }
@@ -269,7 +269,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         return Pair(match?.groups?.get(2)?.value.toString(), match?.groups?.get(3)?.value.toString())
     }
 
-    private suspend fun loadMultiMovies(
+    private suspend fun loadStreamWish(
         url: String,
         callback: (ExtractorLink) -> Unit
     ) {
