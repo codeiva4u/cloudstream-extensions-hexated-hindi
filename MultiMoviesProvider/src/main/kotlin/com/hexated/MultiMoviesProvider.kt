@@ -248,58 +248,55 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
     )
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val referer = data.substringBefore(",")
-        val urlRegex = Regex("\"(http.*)\"")
-        var url = fixUrlNull(
-            getEmbed(
-                data.substringAfter(","),
-                "1",
-                referer
-            ).parsed<EmbedUrl>().embedUrl
-        ).toString()
-        url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    val referer = data.substringBefore(",")
+    val urlRegex = Regex("\"(http.*)\"")
+    var url = fixUrlNull(
+        getEmbed(
+            data.substringAfter(","),
+            "1",
+            referer
+        ).parsed<EmbedUrl>().embedUrl
+    ).toString()
+    url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
+    if (referer.contains("vidhide")) {
+        vidhide(url, subtitleCallback, callback)
+    } else {
         loadStreamWish(url, subtitleCallback, callback)
-
-        return true
     }
 
-    fun splitUrl(url: String): Pair<String, String> {
-        val urlRegex = Regex("(https?://)?([a-zA-Z0-9.-]+)/./(.*)")
-        val match = urlRegex.find(url)
-        return Pair(match?.groups?.get(2)?.value.toString(), match?.groups?.get(3)?.value.toString())
-    }
+    return true
+}
 
-    private suspend fun loadStreamWish(
-        url: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit) {
-
-        val doc = app.get(url).text
-        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
-        val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
-        val headers = mapOf(
-            "Accept" to "*/*",
-            "Connection" to "keep-alive",
-            "Sec-Fetch-Dest" to "empty",
-            "Sec-Fetch-Mode" to "cors",
-            "Sec-Fetch-Site" to "cross-site",
-            "Origin" to "${splitUrl(url)}",
+private suspend fun vidhide(
+    url: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+) {
+    val doc = app.get(url).text
+    val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+    val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
+    val headers = mapOf(
+        "Accept" to "*/*",
+        "Connection" to "keep-alive",
+        "Sec-Fetch-Dest" to "empty",
+        "Sec-Fetch-Mode" to "cors",
+        "Sec-Fetch-Site" to "cross-site",
+        "Origin" to "${splitUrl(url)}",
+    )
+    callback.invoke(
+        ExtractorLink(
+            name,
+            name,
+            link,
+            url,
+            Qualities.Unknown.value,
+            true,
+            headers
         )
-        callback.invoke(
-            ExtractorLink(
-                name,
-                name,
-                link,
-                url,
-                Qualities.Unknown.value,
-                true,
-                headers
-            )
-        )
-    }
+    )
 }
