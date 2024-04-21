@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.utils.Qualities
 
 open class MultiMoviesExtractor : ExtractorApi() {
     override var name = "MultiMovies"
-    override var mainUrl = "https://vidhide.com"
+    override var mainUrl = "https://streamwish.com"
     override val requiresReferer = false
 
     override suspend fun getUrl(url: String, referer: String?): List<ExtractorLink>? {
@@ -31,4 +31,12 @@ open class MultiMoviesExtractor : ExtractorApi() {
             )
         return sources
     }
+
+    suspend fun getExtractorLinks(url: String): List<ExtractorLink>? {
+        val referer = "$mainUrl/"
+        val streamWishLinks = getUrl(url, referer)
+        val vidHideLinks = getUrl(url.replace(mainUrl, "https://vidhide.com"), referer)
+        return (streamWishLinks ?: emptyList()) + (vidHideLinks ?: emptyList())
+    }
 }
+
