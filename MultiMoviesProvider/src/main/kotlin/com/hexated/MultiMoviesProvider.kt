@@ -1,18 +1,13 @@
 package com.hexated
 
-import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.APIHolder.getCaptchaToken
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.lagradost.cloudstream3.extractors.Streamplay
-import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import org.jsoup.nodes.Element
 import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
-import java.net.URI
 
 class MultiMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://multimovies.space"
@@ -24,7 +19,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         TvType.Movie,
         TvType.TvSeries
     )
-    
+
     override val mainPage = mainPageOf(
         "$mainUrl/movies/" to "Latest Release Movies",
         "$mainUrl/trending/" to "Trending Movies",
@@ -72,7 +67,8 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         val posterUrl = fixUrlNull(this.selectFirst("div.poster > img")?.attr("src"))
         //Log.d("posterUrl", posterUrl.toString())
         //Log.d("QualityN", qualityN)
-        val quality = getQualityFromString(this.select("div.poster > div.mepo > span").text().toString())
+        val quality =
+            getQualityFromString(this.select("div.poster > div.mepo > span").text().toString())
         //Log.d("Quality", quality.toString())
         return if (href.contains("Movie")) {
             newMovieSearchResponse(title, href, TvType.Movie) {
@@ -92,14 +88,20 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         //Log.d("document", document.toString())
 
         return document.select("div.result-item").mapNotNull {
-            val title = it.selectFirst("article > div.details > div.title > a")?.text().toString().trim()
+            val title =
+                it.selectFirst("article > div.details > div.title > a")?.text().toString().trim()
             //Log.d("title", titleS)
-            val href = fixUrl(it.selectFirst("article > div.details > div.title > a")?.attr("href").toString())
+            val href = fixUrl(
+                it.selectFirst("article > div.details > div.title > a")?.attr("href").toString()
+            )
             //Log.d("href", href)
-            val posterUrl = fixUrlNull(it.selectFirst("article > div.image > div.thumbnail > a > img")?.attr("src"))
+            val posterUrl = fixUrlNull(
+                it.selectFirst("article > div.image > div.thumbnail > a > img")?.attr("src")
+            )
             //Log.d("posterUrl", posterUrl.toString())
             //Log.d("QualityN", qualityN)
-            val quality = getQualityFromString(it.select("div.poster > div.mepo > span").text().toString())
+            val quality =
+                getQualityFromString(it.select("div.poster > div.mepo > span").text().toString())
             //Log.d("Quality", quality.toString())
             val type = it.select("article > div.image > div.thumbnail > a > span").text().toString()
             if (type.contains("Movie")) {
@@ -205,8 +207,8 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                     Episode(
                         data = it.select("div.episodiotitle > a").attr("href"),
                         name = it.select("div.episodiotitle > a").text(),
-                        season = seasonNum+1,
-                        episode = epNum+1,
+                        season = seasonNum + 1,
+                        episode = epNum + 1,
                         posterUrl = it.select("div.imagen > img").attr("src")
                     )
                 )
@@ -214,7 +216,12 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         }
 
         return if (type == TvType.Movie) {
-            newMovieLoadResponse(title, url, TvType.Movie, url+","+doc.select("#player-option-1").attr("data-post").toString()) {
+            newMovieLoadResponse(
+                title,
+                url,
+                TvType.Movie,
+                url + "," + doc.select("#player-option-1").attr("data-post").toString()
+            ) {
                 this.posterUrl = poster?.trim()
                 this.backgroundPosterUrl = bgposter?.trim()
                 this.year = year
@@ -248,55 +255,92 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
     )
 
     override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
-    val referer = data.substringBefore(",")
-    val urlRegex = Regex("\"(http.*)\"")
-    var url = fixUrlNull(
-        getEmbed(
-            data.substringAfter(","),
-            "1",
-            referer
-        ).parsed<EmbedUrl>().embedUrl
-    ).toString()
-    url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
-    if (referer.contains("vidhide")) {
-        vidhide(url, subtitleCallback, callback)
-    } else {
-        loadStreamWish(url, subtitleCallback, callback)
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val referer = data.substringBefore(",")
+        val urlRegex = Regex("\"(http.*)\"")
+        var url = fixUrlNull(
+            getEmbed(
+                data.substringAfter(","),
+                "1",
+                referer
+            ).parsed<EmbedUrl>().embedUrl
+        ).toString()
+        url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
+        if (referer.contains("vidhide")) {
+            vidhide(url, callback)
+        } else {
+            loadStreamWish(url, callback)
+        }
+
+        return true
     }
 
-    return true
-}
-
-private suspend fun vidhide(
-    url: String,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-) {
-    val doc = app.get(url).text
-    val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
-    val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
-    val headers = mapOf(
-        "Accept" to "*/*",
-        "Connection" to "keep-alive",
-        "Sec-Fetch-Dest" to "empty",
-        "Sec-Fetch-Mode" to "cors",
-        "Sec-Fetch-Site" to "cross-site",
-        "Origin" to "${splitUrl(url)}",
-    )
-    callback.invoke(
-        ExtractorLink(
-            name,
-            name,
-            link,
-            url,
-            Qualities.Unknown.value,
-            true,
-            headers
+    fun splitUrl(url: String): Pair<String, String> {
+        val urlRegex = Regex("(https?://)?([a-zA-Z0-9.-]+)/./(.*)")
+        val match = urlRegex.find(url)
+        return Pair(
+            match?.groups?.get(2)?.value.toString(),
+            match?.groups?.get(3)?.value.toString()
         )
-    )
+    }
+
+    private suspend fun loadStreamWish(
+        url: String,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val doc = app.get(url).text
+        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+        val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Connection" to "keep-alive",
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "cross-site",
+            "Origin" to "${splitUrl(url)}",
+        )
+        callback.invoke(
+            ExtractorLink(
+                name,
+                name,
+                link,
+                url,
+                Qualities.Unknown.value,
+                true,
+                headers
+            )
+        )
+    }
+
+    private suspend fun vidhide(
+        url: String,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val doc = app.get(url).text
+        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+        val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Connection" to "keep-alive",
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "cross-site",
+            "Origin" to "${splitUrl(url)}",
+        )
+        callback.invoke(
+            ExtractorLink(
+                name,
+                name,
+                link,
+                url,
+                Qualities.Unknown.value,
+                true,
+                headers
+            )
+        )
+    }
 }
