@@ -39,4 +39,3 @@ open class MultiMoviesExtractor : ExtractorApi() {
         return (streamWishLinks ?: emptyList()) + (vidHideLinks ?: emptyList())
     }
 }
-
