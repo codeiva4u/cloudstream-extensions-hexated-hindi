@@ -25,5 +25,5 @@ cloudstream {
         "Movie",
         "TvSeries",
     )
-    iconUrl = "https://www.google.com/s2/favicons?domain=movierulzhd.best&sz=%size%"
+    iconUrl = "https://vidhide.com/upload-data/logo_192.png"
 }
