@@ -282,43 +282,37 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private suspend fun loadVidhide(
-    url: String,
-    callback: (ExtractorLink) -> Unit
-) {
-    val doc = app.get(url).text
-
-    // Updated regex pattern (example)
-    val linkRegex = Regex("data-src=\"(https://.*?\.mp4)\"")
-    val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
-
-    if (link.isNullOrEmpty()) {
-        println("No link found for Vidhide")
-        return
+        url: String,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val doc = app.get(url).text
+        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+        val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
+        if (link.isNullOrEmpty()) {
+            println("No link found for vidhide")
+            return
+        }
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Connection" to "keep-alive",
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "cross-site",
+            "Origin" to splitUrl(url).first,
+        )
+        callback.invoke(
+            ExtractorLink(
+                name,
+                name,
+                link,
+                url,
+                Qualities.Unknown.value,
+                true,
+                headers
+            )
+        )
     }
 
-    // Add CORS headers (if necessary)
-    val headers = mapOf(
-        "Accept" to "*/*",
-        "Connection" to "keep-alive",
-        "Sec-Fetch-Dest" to "empty",
-        "Sec-Fetch-Mode" to "cors",
-        "Sec-Fetch-Site" to "cross-site",
-        "Origin" to "${splitUrl(url).first}",
-        "Referer" to url // Add Referer header
-    )
-
-    callback.invoke(
-        ExtractorLink(
-            name,
-            name,
-            link,
-            url,
-            Qualities.Unknown.value,
-            true,
-            headers
-        )
-    )
-}
     private suspend fun loadStreamWish(
         url: String,
         callback: (ExtractorLink) -> Unit
@@ -336,7 +330,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
             "Sec-Fetch-Dest" to "empty",
             "Sec-Fetch-Mode" to "cors",
             "Sec-Fetch-Site" to "cross-site",
-            "Origin" to "${splitUrl(url).first}",
+            "Origin" to splitUrl(url).first,
         )
         callback.invoke(
             ExtractorLink(
