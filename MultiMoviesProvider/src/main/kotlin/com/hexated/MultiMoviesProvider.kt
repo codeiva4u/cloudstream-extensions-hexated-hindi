@@ -11,7 +11,7 @@ import okhttp3.FormBody
 
 class MultiMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://multimovies.space"
-    override var name = "MultiMovies"
+    override var name = "Multi"
     override val hasMainPage = true
     override var lang = "ta"
     override val hasDownloadSupport = true
