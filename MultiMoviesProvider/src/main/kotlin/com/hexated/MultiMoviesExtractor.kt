@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 
-open class StreamWishExtractor : ExtractorApi() {
+open class MultiMoviesExtractor : ExtractorApi() {
     override var name = "StreamWish"
     override var mainUrl = "https://streamwish.to"
     override val requiresReferer = false
