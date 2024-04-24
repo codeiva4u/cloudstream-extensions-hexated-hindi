@@ -16,7 +16,7 @@ import java.net.URI
 
 class MultiMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://multimovies.space"
-    override var name = "MultiMovies"
+    override var name = "Multimovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
