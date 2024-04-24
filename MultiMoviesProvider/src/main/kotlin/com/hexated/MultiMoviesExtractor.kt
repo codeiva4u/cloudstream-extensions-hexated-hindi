@@ -39,7 +39,7 @@ open class MultiMoviesExtractor : ExtractorApi() {
 
 class Fmhd : ExtractorApi() {
     override val name = "Fmhd"
-    override var mainUrl = "https://animezia.cloud"
+    override var mainUrl = "https://cwy3qxl4cigo.enaak-cdn.com"
     override val requiresReferer = true
 
     override suspend fun getUrl(
