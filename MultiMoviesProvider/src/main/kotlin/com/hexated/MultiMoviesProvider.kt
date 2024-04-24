@@ -1,13 +1,18 @@
 package com.hexated
 
+import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.APIHolder.getCaptchaToken
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
+import com.lagradost.cloudstream3.extractors.Streamplay
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import org.jsoup.nodes.Element
 import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
+import java.net.URI
 
 class MultiMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://multimovies.space"
@@ -258,7 +263,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
             ).parsed<EmbedUrl>().embedUrl
         ).toString()
         url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
-        loadStreamWish(url, callback)
+        loadStreamWish(url, subtitleCallback, callback)
 
         return true
     }
@@ -271,8 +276,8 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
 
     private suspend fun loadStreamWish(
         url: String,
-        callback: (ExtractorLink) -> Unit
-    ) {
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit) {
 
         val doc = app.get(url).text
         val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
