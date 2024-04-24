@@ -11,9 +11,9 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import com.lagradost.cloudstream3.utils.getPacked
 
 open class MultiMoviesExtractor : ExtractorApi() {
-    override var name = "MultiMovies"
+    override var name = "MultiMoviesIvan"
     override var mainUrl = "https://streamwish.com"
-    override val requiresReferer = false
+    override val requiresReferer = true
 
     override suspend fun getUrl(url: String, referer: String?): List<ExtractorLink>? {
         val response = app.get(
