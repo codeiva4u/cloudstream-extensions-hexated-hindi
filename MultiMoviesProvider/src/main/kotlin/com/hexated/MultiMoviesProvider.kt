@@ -18,7 +18,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
     override var mainUrl = "https://multimovies.space"
     override var name = "MultiMovies"
     override val hasMainPage = true
-    override var lang = "ta"
+    override var lang = "hi"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
