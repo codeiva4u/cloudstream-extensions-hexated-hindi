@@ -261,7 +261,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val referer = data.substringBefore(",")
-        val urlRegex = Regex("\"(http.*)\"")
+        val urlRegex = Regex("https?:[^\\" + "s\"]+\\.(?:m3u8|mp4|mov|avi)")
         var url = fixUrlNull(
             getEmbed(
                 data.substringAfter(","),
@@ -269,7 +269,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                 referer
             ).parsed<EmbedUrl>().embedUrl
         ).toString()
-        url = urlRegex.find(url)?.groups?.get(1)?.value.toString()
+        url = urlRegex.find(url)?.groups?.get(0)?.value.toString()
 
         // Load links for vidhide or streamwish based on the referer
         if (referer.contains("vidhide")) {
@@ -286,9 +286,9 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ) {
         val doc = app.get(url).text
-        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+        val linkRegex = Regex("sources:\\[\\{file:\"([^\"]+)\"\\s*\\}]/i")
         val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
-        if (link.isNullOrEmpty()) {
+        if (link.isEmpty()) {
             println("No link found for vidhide")
             return
         }
@@ -298,7 +298,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
             "Sec-Fetch-Dest" to "empty",
             "Sec-Fetch-Mode" to "cors",
             "Sec-Fetch-Site" to "cross-site",
-            "Origin" to splitUrl(url).first,
+            "Origin" to url.substringBefore("/"), // replaced splitUrl with substringBefore
         )
         callback.invoke(
             ExtractorLink(
@@ -318,9 +318,9 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ) {
         val doc = app.get(url).text
-        val linkRegex = Regex("sources:.\\[\\{file:\"(.*?)\"")
+        val linkRegex = Regex("sources:\\[\\{file:\"([^\"]+)\"")
         val link = linkRegex.find(doc)?.groups?.get(1)?.value.toString()
-        if (link.isNullOrEmpty()) {
+        if (link.isEmpty()) {
             println("No link found for streamwish")
             return
         }
@@ -330,7 +330,7 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
             "Sec-Fetch-Dest" to "empty",
             "Sec-Fetch-Mode" to "cors",
             "Sec-Fetch-Site" to "cross-site",
-            "Origin" to splitUrl(url).first,
+            "Origin" to url.substringBefore("/"), // replaced splitUrl with substringBefore
         )
         callback.invoke(
             ExtractorLink(
@@ -342,15 +342,6 @@ class MultiMoviesProvider : MainAPI() { // all providers must be an instance of 
                 true,
                 headers
             )
-        )
-    }
-
-    fun splitUrl(url: String): Pair<String, String> {
-        val urlRegex = Regex("(https?://)?([a-zA-Z0-9.-]+)/./(.*)")
-        val match = urlRegex.find(url)
-        return Pair(
-            match?.groups?.get(2)?.value.toString(),
-            match?.groups?.get(3)?.value.toString()
         )
     }
 }
